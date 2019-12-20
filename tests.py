@@ -5,6 +5,7 @@ import re
 import resource
 from tqdm import tqdm
 
+
 class Test(object):
     MY_PATH = NotImplemented
     COURSE_PATH = NotImplemented
@@ -24,7 +25,7 @@ class Test(object):
     def test(self, data):
         course_result, course_time = self.run_test(data, self.COURSE_PATH, self.FILE_NAME)
         my_result, my_time = self.run_test(data, self.MY_PATH, self.FILE_NAME)
-        if my_result != course_result:
+        if not self.compare_output(my_result, course_result):
             print('my result:' + my_result)
             print('course result:' + course_result)
             print('data:' + data)
@@ -48,6 +49,9 @@ class Test(object):
 
     def data_creator(self):
         raise NotImplemented
+
+    def compare_output(self, my_result, course_result):
+        return my_result == course_result
 
     def main(self):
         total_time_test = 0
