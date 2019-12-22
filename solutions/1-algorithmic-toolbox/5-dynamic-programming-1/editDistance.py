@@ -1,23 +1,28 @@
-# python3
-a = input()
-b = input()
+# Uses python3
+import numpy
+def edit_distance(s1, s2):
+    len_1 = len(s1)
+    len_2 = len(s2)
 
-n = len(a) + 1
-m = len(b) + 1
+    dpresult = numpy.zeros((len_1+1 , len_2+1)) # a martix
+    for i in range(len_2+1):  # edit distance for a null string and another string is just length of string
+        dpresult[0][i] = i
 
-d = [[0 for j in range(m)] for i in range(n)]
+    for i in range(len_1+1):
+        dpresult[i][0] = i
 
-for i in range(n):
-  d[i][0] = i
-
-for j in range(m):
-  d[0][j] = j  
-
-for i in range(1, n):
-  for j in range(1, m):
-    if a[i - 1] != b[j - 1]:
-      d[i][j] = min(d[i][j - 1] + 1, d[i - 1][j] + 1, d[i - 1][j - 1] + 1)
-    else:
-      d[i][j] = min(d[i][j - 1] + 1, d[i - 1][j] + 1, d[i - 1][j - 1])
-
-print(d[-1][-1])
+    # Filling remaining matrix
+    for i in range(1, len_1+1):
+        for j in range(1, len_2+1):
+            insertion = dpresult[i][j-1] + 1
+            deletion  = dpresult[i-1][j] + 1
+            mismatch  = dpresult[i-1][j-1] + 1
+            match     = dpresult[i-1][j-1]
+            if s1[i-1] == s2[j-1]: #when it matches
+                dpresult[i][j] = min(insertion, deletion, match)
+            if s1[i-1] != s2[j-1]: #when it doesn't match
+                dpresult[i][j] = min(insertion, deletion, mismatch)
+    
+    return (int(dpresult[len_1][len_2]))
+if __name__ == "__main__":
+    print(edit_distance(input(), input()))

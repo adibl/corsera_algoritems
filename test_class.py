@@ -1,4 +1,5 @@
 import os
+import py_compile
 import subprocess
 import random
 import re
@@ -53,9 +54,16 @@ class Test(object):
     def compare_output(self, my_result, course_result):
         return my_result == course_result
 
+    def compile(self, name):
+        py_compile.compile(name)
+
     def main(self):
+        self.compile(self.MY_PATH + self.FILE_NAME)
+        self.compile(self.COURSE_PATH + self.FILE_NAME)
+        self.FILE_NAME = self.FILE_NAME + 'c'
         total_time_test = 0
         total_time_my = 0
+
         for x in tqdm(range(self.PERMOTATIONS)):
             data = self.data_creator()
             a, time_test, time_my = self.test(data)
