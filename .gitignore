@@ -1,2 +1,15 @@
-# ignore pyc 
-*.pyc
+# Default ignored files
+/workspace.xml
+
+#ignore pyc                                                                                                                                                     
+*.pyc                                                                                                                                                                        
+
+# ignore resource folder                                                                                                                                                     
+*LkuBSNbcEemBBQ6q5tv6Ug_1e8f8d7156f74352a06c585ba4a0d16b_course2_1909141309*                                                                                                 
+*Data-Structures-and-Algorithms-specialization-University-of-California-San-Diego-master*
+
+# ignore .idea folder                                                                                                                                                        
+*.idea
+
+# pycharm 
+*__pycache__*
