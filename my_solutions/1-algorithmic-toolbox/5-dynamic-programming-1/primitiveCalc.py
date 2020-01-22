@@ -13,13 +13,12 @@ for number in range(2, n + 1):
     options.append([arr[-1][0] + 1, 1])
     options.sort(key=lambda x: x[0])
     arr.append(options[0])
-
 s = str(arr[n - 1][0]) + '\n'
 operators = [x[1] for x in arr]
 i = len(operators)
 numbers = [n]
 while i > 1:
-    if operators[i - 1] == 3 or operators[i -1] == 2:
+    if operators[i - 1] == 3 or operators[i - 1] == 2:
         numbers.append(numbers[-1] // operators[i - 1])
         i = i // operators[i - 1]
     elif operators[i - 1] == 1:
@@ -27,3 +26,4 @@ while i > 1:
         numbers.append(numbers[-1] - 1)
 s += " ".join(str(x) for x in numbers[::-1])
 print(s)
+print(s2)

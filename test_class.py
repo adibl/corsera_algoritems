@@ -1,17 +1,17 @@
 import os
 import py_compile
 import subprocess
-import random
 import re
 import resource
 from tqdm import tqdm
-
 
 class Test(object):
     MY_PATH = NotImplemented
     COURSE_PATH = NotImplemented
     FILE_NAME = NotImplemented
-    MAX_VIRTUAL_MEMORY = 512 *1024 *1024
+    IS_PRINT_OUTPUTS = False
+    SEE_STDERR = False
+    MAX_VIRTUAL_MEMORY = 512 * 1024 * 1024
     TIME_LIMIT = 5.0
     PERMOTATIONS = 100
 
@@ -20,24 +20,32 @@ class Test(object):
         # the soft part so that the limit can be increased later (setting also
         # the hard limit would prevent that).
         # When the limit cannot be changed, setrlimit() raises ValueError.
-        resource.setrlimit(resource.RLIMIT_AS, (self.MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
-
+        resource.setrlimit(resource.RLIMIT_AS,
+                           (self.MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
 
     def test(self, data):
-        course_result, course_time = self.run_test(data, self.COURSE_PATH, self.FILE_NAME)
-        my_result, my_time = self.run_test(data, self.MY_PATH, self.FILE_NAME)
+        course_result, course_time = self.run_test(data, self.path_to_me)
+        my_result, my_time = self.run_test(data, self.path_to_course)
         if not self.compare_output(my_result, course_result):
             print('my result:' + my_result)
             print('course result:' + course_result)
             print('data:' + data)
             return False, float(course_time), float(my_time)
+        elif self.IS_PRINT_OUTPUTS:
+            print('my result:' + my_result)
+            print('course result:' + course_result)
+            print('data:' + data)
+            return True, float(course_time), float(my_time)
         return True, float(course_time), float(my_time)
 
-    def run_test(self, data, path, filename):
-        proc = subprocess.Popen(['time', "python", path + filename], stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                              stderr=subprocess.PIPE, preexec_fn=self.limit_virtual_memory)
+    def run_test(self, data, path):
+        proc = subprocess.Popen(['time', "python", path], stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+                                stderr=subprocess.PIPE, preexec_fn=self.limit_virtual_memory)
         try:
-            stdout, stderr = proc.communicate(bytes(data + '\n', 'ascii'), timeout=self.TIME_LIMIT)
+            stdout, stderr = proc.communicate(
+                bytes(data + '\n', 'ascii'), timeout=self.TIME_LIMIT)
+            if self.SEE_STDERR:
+                print(stderr)
             result = str(stdout)
             time = re.search(r'\d+\.\d+', str(stderr)).group()
             return result, time
@@ -47,19 +55,27 @@ class Test(object):
             print('timeout')
             return '', 0
 
-
     def data_creator(self):
         raise NotImplemented
 
     def compare_output(self, my_result, course_result):
         return my_result == course_result
 
-    def compile(self, name):
-        py_compile.compile(name)
+    def compile_file(self, name):
+        result = py_compile.compile(name)
+        print(result)
+        return result
 
     def main(self):
-        self.compile(self.MY_PATH + self.FILE_NAME)
-        self.compile(self.COURSE_PATH + self.FILE_NAME)
+        if not os.path.isfile(self.MY_PATH + self.FILE_NAME):
+            print("file dont exzist:" + self.MY_PATH + self.FILE_NAME)
+            return
+        if not (self.COURSE_PATH + self.FILE_NAME):
+            print("file dont exzist:" + self.COURSE_PATH + self.FILE_NAME)
+            return
+        self.path_to_me = self.compile_file(self.MY_PATH + self.FILE_NAME)
+        self.path_to_course = self.compile_file(
+            self.COURSE_PATH + self.FILE_NAME)
         self.FILE_NAME = self.FILE_NAME + 'c'
         total_time_test = 0
         total_time_my = 0
@@ -75,3 +91,12 @@ class Test(object):
         print("ME:" + str(total_time_my))
         print("him:" + str(total_time_test))
         print('precentage:' + str(int(total_time_my/total_time_test*100)) + '%')
+
+    def unit_test(self, data, result):
+        real_result, time = self.run_test(data, self.MY_PATH + self.FILE_NAME)
+        if self.compare_output(real_result, result):
+            return True
+        else:
+            print(real_result)
+            print(result)
+            return False

@@ -2,6 +2,7 @@
 str1 = input()
 str2 = input()
 arr = [[], ]
+import pdb;pdb.set_trace()
 for i in range(0, len(str2) + 1):
     arr[0].append(i)
 

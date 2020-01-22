@@ -1,6 +1,6 @@
 import random
 import re
-from tests import Test
+from test_class import Test
 
 class Test_spec(Test):
     COURSE_PATH = '/home/adi/PycharmProjects/algoritems/solutions/1-algorithmic-toolbox/5-dynamic-programming-1/'
