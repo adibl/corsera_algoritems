@@ -17,7 +17,7 @@ def solve():
 
   # If stack is not empty, unmatched opening bracket exists
   if len(stack) != 0:
-    return stack[0][1] + 1
+    return len(string)
   else:
     return 'Success'
 

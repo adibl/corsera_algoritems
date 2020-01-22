@@ -24,8 +24,8 @@ class Test(object):
                            (self.MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
 
     def test(self, data):
-        course_result, course_time = self.run_test(data, self.path_to_me)
-        my_result, my_time = self.run_test(data, self.path_to_course)
+        course_result, course_time = self.run_test(data, self.path_to_course)
+        my_result, my_time = self.run_test(data, self.path_to_me)
         if not self.compare_output(my_result, course_result):
             print('my result:' + my_result)
             print('course result:' + course_result)
