@@ -23,9 +23,9 @@ class Test(object):
         resource.setrlimit(resource.RLIMIT_AS,
                            (self.MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
 
-    def test(self, data):
-        course_result, course_time = self.run_test(data, self.path_to_course)
-        my_result, my_time = self.run_test(data, self.path_to_me)
+    def run_test(self, data):
+        course_result, course_time = self.run_subprocess(data, self.path_to_course)
+        my_result, my_time = self.run_subprocess(data, self.path_to_me)
         if not self.compare_output(my_result, course_result):
             print('my result:' + my_result)
             print('course result:' + course_result)
@@ -38,7 +38,7 @@ class Test(object):
             return True, float(course_time), float(my_time)
         return True, float(course_time), float(my_time)
 
-    def run_test(self, data, path):
+    def run_subprocess(self, data, path):
         proc = subprocess.Popen(['time', "python", path], stdout=subprocess.PIPE, stdin=subprocess.PIPE,
                                 stderr=subprocess.PIPE, preexec_fn=self.limit_virtual_memory)
         try:
@@ -46,8 +46,8 @@ class Test(object):
                 bytes(data + '\n', 'ascii'), timeout=self.TIME_LIMIT)
             if self.SEE_STDERR:
                 print(stderr)
-            result = str(stdout)
-            time = re.search(r'\d+\.\d+', str(stderr)).group()
+            result = str(stdout, 'utf-8')
+            time = re.search(r'\d+\.\d+', str(stderr, 'utf-8')).group()
             return result, time
 
         except subprocess.TimeoutExpired:
@@ -59,7 +59,7 @@ class Test(object):
         raise NotImplemented
 
     def compare_output(self, my_result, course_result):
-        return my_result == course_result
+        return my_result.strip() == course_result.strip()
 
     def compile_file(self, name):
         result = py_compile.compile(name)
@@ -82,7 +82,7 @@ class Test(object):
 
         for x in tqdm(range(self.PERMOTATIONS)):
             data = self.data_creator()
-            a, time_test, time_my = self.test(data)
+            a, time_test, time_my = self.run_test(data)
             total_time_test += time_test
             total_time_my += time_my
             if not a:
@@ -92,11 +92,6 @@ class Test(object):
         print("him:" + str(total_time_test))
         print('precentage:' + str(int(total_time_my/total_time_test*100)) + '%')
 
-    def unit_test(self, data, result):
-        real_result, time = self.run_test(data, self.MY_PATH + self.FILE_NAME)
-        if self.compare_output(real_result, result):
-            return True
-        else:
-            print(real_result)
-            print(result)
-            return False
+    def unit_test(self, data):
+        real_result, time = self.run_subprocess(data, self.MY_PATH + self.FILE_NAME)
+        return real_result.strip()
