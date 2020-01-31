@@ -20,6 +20,7 @@ class Test_spec(test_class.Test):
     def number2(cls): return random.randrange(0, 10 ** 5)
 
     def data_creator(self):
+        import pdb;pdb.set_trace()
         len1 = self.number()
         s = str(len1) + '\n'
         for i in range(len1):
