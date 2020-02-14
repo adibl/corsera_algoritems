@@ -1,9 +1,11 @@
 import os
-import py_compile
+import importlib
+import compileall
 import subprocess
 import re
 import resource
 from tqdm import tqdm
+
 
 class Test(object):
     MY_PATH = NotImplemented
@@ -24,12 +26,14 @@ class Test(object):
                            (self.MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
 
     def run_test(self, data):
-        course_result, course_time = self.run_subprocess(data, self.path_to_course)
+        course_result, course_time = self.run_subprocess(
+            data, self.path_to_course)
         my_result, my_time = self.run_subprocess(data, self.path_to_me)
         if not self.compare_output(my_result, course_result):
-            print('my result:' + my_result)
-            print('course result:' + course_result)
-            print('data:' + data)
+            if self.IS_PRINT_OUTPUTS:
+                print('my result:' + my_result)
+                print('course result:' + course_result)
+                print('data:' + data)
             return False, float(course_time), float(my_time)
         elif self.IS_PRINT_OUTPUTS:
             print('my result:' + my_result)
@@ -39,32 +43,34 @@ class Test(object):
         return True, float(course_time), float(my_time)
 
     def run_subprocess(self, data, path):
+        import os
         proc = subprocess.Popen(['time', "python", path], stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                stderr=subprocess.PIPE, preexec_fn=self.limit_virtual_memory)
+                                stderr=subprocess.PIPE, preexec_fn=self.limit_virtual_memory, cwd=os.path.dirname(path))
         try:
             stdout, stderr = proc.communicate(
-                bytes(data + '\n', 'ascii'), timeout=self.TIME_LIMIT)
-            if self.SEE_STDERR:
-                print(stderr)
+                bytes(data + '\n', 'ascii'), timeout=15)
             result = str(stdout, 'utf-8')
             time = re.search(r'\d+\.\d+', str(stderr, 'utf-8')).group()
-            return result, time
-
+            if float(time) > self.TIME_LIMIT:
+                print('timeout')
+                return '', 0
+            elif self.SEE_STDERR:
+                print(stderr)
+                return result, time
+            else:
+                return result, time
         except subprocess.TimeoutExpired:
-            proc.terminate()
-            print('timeout')
-            return '', 0
+            print('data:' + str(data))
+            print('more than 15 seconds')
 
     def data_creator(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def compare_output(self, my_result, course_result):
         return my_result.strip() == course_result.strip()
 
     def compile_file(self, name):
-        result = py_compile.compile(name)
-        print(result)
-        return result
+        compileall.compile_dir(name)
 
     def main(self):
         if not os.path.isfile(self.MY_PATH + self.FILE_NAME):
@@ -73,10 +79,12 @@ class Test(object):
         if not (self.COURSE_PATH + self.FILE_NAME):
             print("file dont exzist:" + self.COURSE_PATH + self.FILE_NAME)
             return
-        self.path_to_me = self.compile_file(self.MY_PATH + self.FILE_NAME)
-        self.path_to_course = self.compile_file(
-            self.COURSE_PATH + self.FILE_NAME)
-        self.FILE_NAME = self.FILE_NAME + 'c'
+        self.compile_file(self.MY_PATH)
+        self.compile_file(
+            self.COURSE_PATH)
+
+        self.path_to_course = importlib.util.cache_from_source(self.COURSE_PATH + self.FILE_NAME)
+        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH + self.FILE_NAME)
         total_time_test = 0
         total_time_my = 0
 
@@ -94,8 +102,4 @@ class Test(object):
 
     def unit_test(self, data):
         real_result, time = self.run_subprocess(data, self.MY_PATH + self.FILE_NAME)
-
-
-
-
         return real_result.strip()
