@@ -8,7 +8,7 @@ class Test_spec(test_class.Test):
     MY_PATH = '/home/adi/PycharmProjects/algoritems/my_solutions/2-data-structures/3-hash-tables/'
     FILE_NAME = 'chaining.py'
     PERMOTATIONS = 100
-    TIME_LIMIT = 7.0
+    SOME_NAME = 7.0
 
     @classmethod
     def number(cls): return random.randrange(10, 10 ** 5)
