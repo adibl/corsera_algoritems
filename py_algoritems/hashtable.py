@@ -72,7 +72,11 @@ class HashTable(object):
         b = random.randrange(0, cls.PRIME)
         return lambda number: ((a * number + b) % cls.PRIME) % cls.M
 
-    def __init__(self, hash_function=None):
+    @classmethod
+    def PolyHashFunction(p, x, m):
+        return lambda string: sum([ord(string[i]) * (x ** i) for i in range(len(string))]) % p % m
+
+    def __init__(self, hash_function=None, m=None, prime=None):
         self.arr = numpy.empty((self.M), dtype=list)
         if hash_function is None:
             self.hash_function = self.IntHashFamily()
@@ -135,8 +139,8 @@ def test_remove():
     h = HashTable()
     h.add(12345, 'a')
     h.add(123456, 'b')
-    assert h.is_value(12345) == True
-    assert h.is_value(123456) == True
+    assert h.is_value(12345) is True
+    assert h.is_value(123456) is True
     h.remove(12345)
     assert h.get(12345) is None
 
@@ -158,14 +162,3 @@ def test_many_chain():
         h.add(i)
     for i in range(140, 160):
         assert h.is_value(i) is True
-
-
-def test_remove():
-    HashTable.M = 1
-    h = HashTable()
-    h.add(12345, 'a')
-    h.add(123456, 'b')
-    assert h.is_value(12345) == True
-    assert h.is_value(123456) == True
-    h.remove(12345)
-    assert h.get(12345) is None
