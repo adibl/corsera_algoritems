@@ -1,54 +1,60 @@
 # python3
-import sys, threading
+import sys
+import threading
 
 sys.setrecursionlimit(10**6)
 threading.stack_size(2**25)
 
+
 def inorder(index):
-  # left -> root -> right
-  key, left, right = tree[index]
+    # left -> root -> right
+    key, left, right = tree[index]
 
-  if left != -1:
-    inorder(left)
+    if left != -1:
+        inorder(left)
 
-  print(key, end=' ')
+    print(key, end=' ')
 
-  if right != -1:
-    inorder(right)
-  
+    if right != -1:
+        inorder(right)
+
+
 def preorder(index):
-  # root -> left -> right
-  key, left, right = tree[index]
-  
-  print(key, end=' ')
+    # root -> left -> right
+    key, left, right = tree[index]
 
-  if left != -1:
-    preorder(left)
+    print(key, end=' ')
 
-  if right != -1:
-    preorder(right)
+    if left != -1:
+        preorder(left)
+
+    if right != -1:
+        preorder(right)
+
 
 def postorder(index):
-  # left -> right -> root
-  key, left, right = tree[index]
+    # left -> right -> root
+    key, left, right = tree[index]
 
-  if left != -1:
-    postorder(left)
+    if left != -1:
+        postorder(left)
 
-  if right != -1:
-    postorder(right)
-  
-  print(key, end=' ')
+    if right != -1:
+        postorder(right)
+
+    print(key, end=' ')
+
 
 def main():
-  for i in range(n):
-    tree.append([int(x) for x in input().split()])
+    for i in range(n):
+        tree.append([int(x) for x in input().split()])
 
-  inorder(0)
-  print()
-  preorder(0)
-  print()
-  postorder(0)
+    inorder(0)
+    print()
+    preorder(0)
+    print()
+    postorder(0)
+
 
 n = int(input())
 tree = []

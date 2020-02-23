@@ -103,6 +103,12 @@ class BinaryTree(object):
         else:
             return self.right_ancestor(node)
 
+    def get_biggest(self):
+        node = self.root
+        while node.left_child is not None:
+            node = node.left_child
+        return node
+
     def premote(self, node):
         if node.parent is self.root:
             self.root = node
@@ -173,6 +179,22 @@ class BinaryTree(object):
         if root is None:
             return []
         return self.get_in_order_recursion(root.right_child) + [root.value, ] + self.get_in_order_recursion(root.left_child)
+
+    def get_pre_order(self):
+        return self.get_pre_order_recursion(self.root)
+
+    def get_pre_order_recursion(self, root):
+        if root is None:
+            return []
+        return [root.value, ] + self.get_pre_order_recursion(root.right_child) + self.get_pre_order_recursion(root.left_child)
+
+    def get_post_order(self):
+        return self.get_post_order_recursion(self.root)
+
+    def get_post_order_recursion(self, root):
+        if root is None:
+            return []
+        return self.get_post_order_recursion(root.right_child) + self.get_post_order_recursion(root.left_child) + [root.value, ]
 
 
 def test_Node_parameters():
@@ -268,3 +290,23 @@ def test_get_in_order():
     tree.add(3)
     tree.add(1)
     assert tree.get_in_order() == [1, 2, 3, 4, 5]
+
+
+def test_get_pre_order():
+    tree = BinaryTree()
+    tree.add(4)
+    tree.add(2)
+    tree.add(5)
+    tree.add(3)
+    tree.add(1)
+    assert tree.get_pre_order() == [4, 2, 1, 3, 5]
+
+
+def test_get_post_order():
+    tree = BinaryTree()
+    tree.add(4)
+    tree.add(2)
+    tree.add(5)
+    tree.add(3)
+    tree.add(1)
+    assert tree.get_post_order() == [1, 3, 2, 5, 4]
