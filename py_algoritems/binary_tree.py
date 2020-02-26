@@ -10,7 +10,7 @@ class TreeNode(object):
         self._right_child = None
 
     def __eq__(self, other):
-        if type(other) is TreeNode:
+        if issubclass(type(other), TreeNode):
             return self.value == other.value
         elif type(other) is type(self.value):
             return self.value == other
@@ -18,7 +18,7 @@ class TreeNode(object):
             raise NotImplementedError
 
     def __lt__(self, other):
-        if type(other) is TreeNode:
+        if issubclass(type(other), TreeNode):
             return self.value < other.value
         elif type(other) is type(self.value):
             return self.value < other
@@ -26,11 +26,9 @@ class TreeNode(object):
             raise NotImplementedError
 
     def __delete__(self):
-        if self is self.parent.left_child:
-            self.parent.left_child = None
-        elif self is self.parent.right_child:
-            self.parent.right_child = None
-        self.parent = None
+        self._parent = None
+        self._right_child = None
+        self._left_child = None
 
     @property
     def parent(self):
@@ -38,6 +36,8 @@ class TreeNode(object):
 
     @parent.setter
     def parent(self, value):
+        if value is self:
+            raise ValueError
         if self._parent is not None:
             if self._parent.left_child is self:
                 self._parent.left_child = None
@@ -47,7 +47,7 @@ class TreeNode(object):
         if self._parent is not None:
             if self > self._parent:
                 self._parent.right_child = self
-            else:
+            elif self < self._parent:
                 self._parent.left_child = self
 
     @property
@@ -56,6 +56,8 @@ class TreeNode(object):
 
     @left_child.setter
     def left_child(self, value):
+        if value is self:
+            raise ValueError
         self._left_child = value
         if value is not None:
             value._parent = self
@@ -66,6 +68,8 @@ class TreeNode(object):
 
     @right_child.setter
     def right_child(self, value):
+        if value is self:
+            raise ValueError
         self._right_child = value
         if value is not None:
             value._parent = self
@@ -88,9 +92,11 @@ class BinaryTree(object):
             raise NotImplementedError
 
     def right_ancestor(self, node):
+        if node.parent is None:
+            return None
         while node > node._parent:
             node = node._parent
-        return node
+        return node.parent
 
     def left_descendant(self, node):
         while node.left_child is not None:
@@ -103,25 +109,24 @@ class BinaryTree(object):
         else:
             return self.right_ancestor(node)
 
-    def get_biggest(self):
-        node = self.root
+    def get_biggest(self, node: TreeNode = None):
+        if node is None:
+            node = self.root
         while node.right_child is not None:
             node = node.right_child
         return node
 
     def premote(self, node):
+        if node is None:
+            return 
         if node.parent is self.root:
             self.root = node
-        node.parent = node.parent.parent
+            node.parent = None
+        else:
+            node.parent = node.parent.parent
 
     def switch(self, node, node2):
-        if node is self.root:
-            self.root = node2
-        elif node2 is self.root:
-            self.root = node
-        node.parent, node2.parent = node2.parent, node.parent
-        node.left_child, node2.left_child = node2.left_child, node.left_child
-        node.right_child, node2.right_child = node2.right_child, node.right_child
+        node.value, node2.value = node2.value, node.value
 
     def find(self, data):
         node = self.root
@@ -134,7 +139,6 @@ class BinaryTree(object):
                 if node.left_child is None:
                     return node
                 node = node.left_child
-
             else:
                 return node
         return None
@@ -152,6 +156,23 @@ class BinaryTree(object):
                 place.left_child = TreeNode(data)
                 place = place.left_child
             return place
+
+    def _delete_node(self, node):
+        ret = node.value
+        if node is self.root and node.is_leaf():
+            self.root = None
+        elif node.right_child is None:
+            self.premote(node.left_child)
+            del node
+        else:
+            node2 = self.next_in_size(node)
+            self.switch(node, node2)
+            node, node2 = node2, node
+            if node.right_child is not None:
+                self.premote(node.right_child)
+            node.parent = None
+            del node
+            return ret
 
     def get_in_order(self):
         return self.get_in_order_recursion(self.root)
@@ -255,3 +276,16 @@ def test_get_post_order():
     tree.add(3)
     tree.add(1)
     assert tree.get_post_order() == [1, 3, 2, 5, 4]
+
+
+def test_delete_node():
+    tree = BinaryTree()
+    tree.add(4)
+    tree.add(2)
+    tree.add(5)
+    tree.add(3)
+    tree.add(1)
+    tree._delete_node(tree.root.left_child)
+    assert tree.root.left_child == 3
+    assert tree.root.left_child.left_child == 1
+    assert tree.root.left_child.right_child is None

@@ -28,7 +28,8 @@ class Test(object):
     def run_test(self, data):
         course_result, course_time = self.run_subprocess(
             data, self.path_to_course, self.TIME_LIMIT * 5)
-        my_result, my_time = self.run_subprocess(data, self.path_to_me, self.TIME_LIMIT)
+        my_result, my_time = self.run_subprocess(data, self.path_to_me,
+                                                 self.TIME_LIMIT)
         if not self.compare_output(my_result, course_result):
             if self.IS_PRINT_OUTPUTS:
                 print('my result:' + my_result)
@@ -43,7 +44,8 @@ class Test(object):
         return True, float(course_time), float(my_time)
 
     def run_only_me(self, data):
-        my_result, my_time = self.run_subprocess(data, self.path_to_me, self.TIME_LIMIT)
+        my_result, my_time = self.run_subprocess(data, self.path_to_me,
+                                                 self.TIME_LIMIT)
         if self.IS_PRINT_OUTPUTS:
             print('my result:' + my_result)
             print('data:' + data)
@@ -56,12 +58,15 @@ class Test(object):
         return NotImplemented
 
     def run_subprocess(self, data, path, time_limit):
-        import os
-        proc = subprocess.Popen(['time', "python", path], stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                stderr=subprocess.PIPE, preexec_fn=self.limit_virtual_memory, cwd=os.path.dirname(path))
+        proc = subprocess.Popen(['time', "python", path],
+                                stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                preexec_fn=self.limit_virtual_memory,
+                                cwd=os.path.dirname(path))
         try:
-            stdout, stderr = proc.communicate(
-                bytes(data + '\n', 'ascii'), timeout=time_limit * 3)
+            stdout, stderr = proc.communicate(bytes(data + '\n', 'ascii'),
+                                              timeout=time_limit * 3)
             result = str(stdout, 'utf-8')
             time = re.search(r'\d+\.\d+', str(stderr, 'utf-8')).group()
             if float(time) > time_limit:
@@ -93,11 +98,12 @@ class Test(object):
             print("file dont exzist:" + self.COURSE_PATH + self.FILE_NAME)
             return
         self.compile_file(self.MY_PATH)
-        self.compile_file(
-            self.COURSE_PATH)
+        self.compile_file(self.COURSE_PATH)
 
-        self.path_to_course = importlib.util.cache_from_source(self.COURSE_PATH + self.FILE_NAME)
-        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH + self.FILE_NAME)
+        self.path_to_course = importlib.util.cache_from_source(
+            self.COURSE_PATH + self.FILE_NAME)
+        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH +
+                                                           self.FILE_NAME)
         total_time_test = 0
         total_time_my = 0
 
@@ -111,10 +117,12 @@ class Test(object):
                 break
         print("ME:" + str(total_time_my))
         print("him:" + str(total_time_test))
-        print('precentage:' + str(int(total_time_my/total_time_test*100)) + '%')
+        print('precentage:' + str(int(total_time_my / total_time_test * 100)) +
+              '%')
 
     def unit_test(self, data):
-        real_result, time = self.run_subprocess(data, self.MY_PATH + self.FILE_NAME)
+        real_result, time = self.run_subprocess(data,
+                                                self.MY_PATH + self.FILE_NAME, self.TIME_LIMIT)
         return real_result.strip()
 
     def test_aginst_function(self):
@@ -122,7 +130,8 @@ class Test(object):
             print("file dont exzist:" + self.MY_PATH + self.FILE_NAME)
             return
         self.compile_file(self.MY_PATH)
-        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH + self.FILE_NAME)
+        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH +
+                                                           self.FILE_NAME)
         total_time_my = 0
         for x in tqdm(range(self.PERMOTATIONS)):
             data = self.data_creator()

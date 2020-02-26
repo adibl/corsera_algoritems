@@ -11,6 +11,7 @@ tqdm = "*"
 numpy = "*"
 pytest = "*"
 pdbpp = "*"
+bintrees = "*"
 
 [requires]
 python_version = "3.6"
