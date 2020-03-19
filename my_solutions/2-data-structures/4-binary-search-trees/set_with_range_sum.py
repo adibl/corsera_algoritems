@@ -22,7 +22,7 @@ class SplayTreeWithSum(SplayTree):
             self.root = TreeNodeWithSum(value)
             return self.root
         else:
-            node = super().find(value)
+            node = super()._find_dont_splay(value)
             if value > node:
                 node.right_child = TreeNodeWithSum(value)
                 node.subtree_sum += value
