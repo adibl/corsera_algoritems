@@ -3,7 +3,10 @@ import importlib
 import compileall
 import subprocess
 import re
-import resource
+#import resource
+import datetime
+
+from timeit import default_timer as timer
 from tqdm import tqdm
 
 
@@ -18,12 +21,14 @@ class Test(object):
     PERMOTATIONS = 100
 
     def limit_virtual_memory(self):
+        pass
         # The tuple below is of the form (soft limit, hard limit). Limit only
         # the soft part so that the limit can be increased later (setting also
         # the hard limit would prevent that).
         # When the limit cannot be changed, setrlimit() raises ValueError.
-        resource.setrlimit(resource.RLIMIT_AS,
-                           (self.MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
+        # TODO: add memory limit for win
+        #resource.setrlimit(resource.RLIMIT_AS,
+        #(self.MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
 
     def run_test(self, data):
         course_result, course_time = self.run_subprocess(
@@ -58,17 +63,20 @@ class Test(object):
         return NotImplemented
 
     def run_subprocess(self, data, path, time_limit):
-        proc = subprocess.Popen(['time', "python", path],
+        start = timer()
+        proc = subprocess.Popen(["python", path],
                                 stdout=subprocess.PIPE,
                                 stdin=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
-                                preexec_fn=self.limit_virtual_memory,
+                                #preexec_fn=self.limit_virtual_memory,
                                 cwd=os.path.dirname(path))
         try:
             stdout, stderr = proc.communicate(bytes(data + '\n', 'ascii'),
-                                              timeout=time_limit * 3)
+                                              timeout=time_limit)
+            end = timer()
             result = str(stdout, 'utf-8')
-            time = re.search(r'\d+\.\d+', str(stderr, 'utf-8')).group()
+            #time = re.search(r'\d+\.\d+', str(stderr, 'utf-8')).group()
+            time = end - start
             if float(time) > time_limit:
                 print('timeout:' + str(time_limit))
                 return '', 0
@@ -90,18 +98,17 @@ class Test(object):
     def compile_file(self, name):
         compileall.compile_dir(name)
 
-    def main(self):
+    def test_main(self):
         if not os.path.isfile(self.MY_PATH + self.FILE_NAME):
-            print("file dont exzist:" + self.MY_PATH + self.FILE_NAME)
-            return
-        if not (self.COURSE_PATH + self.FILE_NAME):
-            print("file dont exzist:" + self.COURSE_PATH + self.FILE_NAME)
-            return
+            raise Exception("file dont exzist:" + self.MY_PATH + self.FILE_NAME)
+        if not os.path.isfile(self.COURSE_PATH + self.FILE_NAME):
+            raise Exception("file dont exzist:" + self.COURSE_PATH + self.FILE_NAME)
         self.compile_file(self.MY_PATH)
         self.compile_file(self.COURSE_PATH)
 
         self.path_to_course = importlib.util.cache_from_source(
             self.COURSE_PATH + self.FILE_NAME)
+        self.path_to_course = self.path_to_course
         self.path_to_me = importlib.util.cache_from_source(self.MY_PATH +
                                                            self.FILE_NAME)
         total_time_test = 0
@@ -128,8 +135,7 @@ class Test(object):
 
     def test_aginst_function(self):
         if not os.path.isfile(self.MY_PATH + self.FILE_NAME):
-            print("file dont exzist:" + self.MY_PATH + self.FILE_NAME)
-            return
+            raise Exception("file dont exzist:" + self.MY_PATH + self.FILE_NAME)
         self.compile_file(self.MY_PATH)
         self.path_to_me = importlib.util.cache_from_source(self.MY_PATH +
                                                            self.FILE_NAME)

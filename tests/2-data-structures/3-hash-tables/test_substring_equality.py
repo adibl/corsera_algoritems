@@ -4,8 +4,8 @@ import test_class
 
 
 class Test_spec(test_class.Test):
-    COURSE_PATH = '/home/adi/PycharmProjects/algoritems/solutions/2-data-structures/3-hash-tables/'
-    MY_PATH = '/home/adi/PycharmProjects/algoritems/my_solutions/2-data-structures/3-hash-tables/'
+    COURSE_PATH = 'D:\\adi\\learning\\corsera_algoritems\\solutions\\2-data-structures\\3-hash-tables\\'
+    MY_PATH = 'D:\\adi\\learning\\corsera_algoritems\\my_solutions\\2-data-structures\\3-hash-tables\\'
     # IS_PRINT_OUTPUTS = True
     # SEE_STDERR = True
     FILE_NAME = 'substring_equality.py'
