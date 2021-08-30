@@ -8,10 +8,11 @@ import datetime
 from threading import Timer
 
 from timeit import default_timer as timer
-from tqdm import tqdm
+import tqdm
 
 
 class Test(object):
+    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     MY_PATH = NotImplemented
     COURSE_PATH = NotImplemented
     IS_PRINT_OUTPUTS = False
@@ -46,7 +47,7 @@ class Test(object):
         return [float(x) for x in times]
 
     def run_only_me(self, data):
-        my_result, my_time = self.run_subprocess(data, self.path_to_me,
+        my_result, my_time = self.run_subprocess(data, self.MY_PATH,
                                                  self.TIME_LIMIT)
         if self.IS_PRINT_OUTPUTS:
             print('my result:' + my_result)
@@ -57,16 +58,16 @@ class Test(object):
             return False, float(-1.0), float(my_time)
 
     def validate_result(self, result, data):
-        raise NotImplemented
+        return NotImplemented
 
     def run_subprocess(self, data, path, time_limit):
         start = timer()
-        proc = subprocess.Popen(["python", path],
+        proc = subprocess.Popen(["python", self.ROOT_DIR + path],
                                 stdout=subprocess.PIPE,
                                 stdin=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 #preexec_fn=self.limit_virtual_memory,
-                                cwd=os.path.dirname(path))
+                                cwd=os.path.dirname(self.ROOT_DIR + path))
         try:
             stdout, stderr = proc.communicate(bytes(data + '\n', 'ascii'),
                                               timeout=time_limit)
@@ -76,15 +77,12 @@ class Test(object):
             time = end - start
             if float(time) > time_limit:
                 print('timeout:' + str(time_limit))
-                return '', 0
-            elif self.SEE_STDERR:
-                print(stderr)
-                return result, time
-            else:
-                return result, time
+                raise TimeoutError("excede time limit- took{} insted of {}".format(time, time_limit))
+            if self.SEE_STDERR:
+                print("STDERR:" + str(stderr))
+            return result, time
         except subprocess.TimeoutExpired:
-            print('data:' + str(data))
-            print('more than {0} seconds'.format(time_limit * 3))
+            raise TimeoutError('more than {0} seconds'.format(time_limit))
 
     def data_creator(self):
         raise NotImplementedError
@@ -92,28 +90,16 @@ class Test(object):
     def compare_output(self, my_result, course_result):
         return my_result.strip() == course_result.strip()
 
-    def compile_file(self, name):
-        compileall.compile_dir(name)
-
-    def compile(self, path):
-        if not os.path.isfile(path):
-            raise Exception("file dont exzist:" + self.MY_PATH)
-        self.compile_file(path)
-        return importlib.util.cache_from_source(path)
-
     def test_main(self):
         times = []
         for path in [self.MY_PATH, self.COURSE_PATH]:
-            if not os.path.isfile(path):
-                raise Exception("file dont exzist:" + self.MY_PATH)
-            self.compile_file(path)
-
-            self.compiled_path = importlib.util.cache_from_source(path)
+            if not os.path.isfile(self.ROOT_DIR + path):
+                raise Exception("file dont exzist:" + self.ROOT_DIR + path)
             total_time = 0
 
         my_total_time = 0
         course_total_time = 0
-        for x in tqdm(range(self.PERMOTATIONS)):
+        for x in tqdm.gui.tqdm(range(self.PERMOTATIONS)):
             data = self.data_creator()
             my_time, course_time = self.run_test(data, [self.MY_PATH, self.COURSE_PATH])
             my_total_time += my_time
@@ -130,10 +116,8 @@ class Test(object):
         return real_result.strip()
 
     def test_aginst_function(self):
-        if not os.path.isfile(self.MY_PATH):
-            raise Exception("file dont exzist:" + self.MY_PATH)
-        self.compile_file(self.MY_PATH)
-        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH)
+        if not os.path.isfile(self.ROOT_DIR + self.MY_PATH):
+            raise Exception("file dont exzist:" + self.ROOT_DIR + self.MY_PATH)
         total_time_my = 0
         for x in tqdm(range(self.PERMOTATIONS)):
             data = self.data_creator()
