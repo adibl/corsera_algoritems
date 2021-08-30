@@ -14,7 +14,6 @@ from tqdm import tqdm
 class Test(object):
     MY_PATH = NotImplemented
     COURSE_PATH = NotImplemented
-    FILE_NAME = NotImplemented
     IS_PRINT_OUTPUTS = False
     SEE_STDERR = False
     MAX_VIRTUAL_MEMORY = 512 * 1024 * 1024
@@ -31,23 +30,20 @@ class Test(object):
         #resource.setrlimit(resource.RLIMIT_AS,
         #(self.MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
 
-    def run_test(self, data):
-        course_result, course_time = self.run_subprocess(
-            data, self.path_to_course, self.TIME_LIMIT * 5)
-        my_result, my_time = self.run_subprocess(data, self.path_to_me,
-                                                 self.TIME_LIMIT)
-        if not self.compare_output(my_result, course_result):
+    def run_test(self, data, paths):
+        times = []
+        results = []
+        for path in paths:
+            result, time = self.run_subprocess(data, path, self.TIME_LIMIT * 5)
+            results.append(result)
+            times.append(time)
+        if not self.compare_output(results[0], results[1]):
             if self.IS_PRINT_OUTPUTS:
-                print('my result:' + my_result)
-                print('course result:' + course_result)
+                print('my result:' + results[0])
+                print('course result:' + results[1])
                 print('data:' + data)
-            return False, float(course_time), float(my_time)
-        elif self.IS_PRINT_OUTPUTS:
-            print('my result:' + my_result)
-            print('course result:' + course_result)
-            print('data:' + data)
-            return True, float(course_time), float(my_time)
-        return True, float(course_time), float(my_time)
+            raise ArithmeticError("dont match")
+        return [float(x) for x in times]
 
     def run_only_me(self, data):
         my_result, my_time = self.run_subprocess(data, self.path_to_me,
@@ -61,7 +57,7 @@ class Test(object):
             return False, float(-1.0), float(my_time)
 
     def validate_result(self, result, data):
-        return NotImplemented
+        raise NotImplemented
 
     def run_subprocess(self, data, path, time_limit):
         start = timer()
@@ -99,53 +95,50 @@ class Test(object):
     def compile_file(self, name):
         compileall.compile_dir(name)
 
+    def compile(self, path):
+        if not os.path.isfile(path):
+            raise Exception("file dont exzist:" + self.MY_PATH)
+        self.compile_file(path)
+        return importlib.util.cache_from_source(path)
+
     def test_main(self):
-        if not os.path.isfile(self.MY_PATH + self.FILE_NAME):
-            raise Exception("file dont exzist:" + self.MY_PATH + self.FILE_NAME)
-        if not os.path.isfile(self.COURSE_PATH + self.FILE_NAME):
-            raise Exception("file dont exzist:" + self.COURSE_PATH + self.FILE_NAME)
-        self.compile_file(self.MY_PATH)
-        self.compile_file(self.COURSE_PATH)
+        times = []
+        for path in [self.MY_PATH, self.COURSE_PATH]:
+            if not os.path.isfile(path):
+                raise Exception("file dont exzist:" + self.MY_PATH)
+            self.compile_file(path)
 
-        self.path_to_course = importlib.util.cache_from_source(
-            self.COURSE_PATH + self.FILE_NAME)
-        self.path_to_course = self.path_to_course
-        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH +
-                                                           self.FILE_NAME)
-        total_time_test = 0
-        total_time_my = 0
+            self.compiled_path = importlib.util.cache_from_source(path)
+            total_time = 0
 
+        my_total_time = 0
+        course_total_time = 0
         for x in tqdm(range(self.PERMOTATIONS)):
             data = self.data_creator()
-            a, time_test, time_my = self.run_test(data)
-            total_time_test += time_test
-            total_time_my += time_my
-            if not a:
-                print('BAG')
-                break
-        print("ME:" + str(total_time_my / self.PERMOTATIONS))
-        print("him:" + str(total_time_test / self.PERMOTATIONS))
-        print('precentage:' + str(int(total_time_my / total_time_test * 100)) +
+            my_time, course_time = self.run_test(data, [self.MY_PATH, self.COURSE_PATH])
+            my_total_time += my_time
+            course_total_time += course_time
+        print("ME:" + str(my_total_time / self.PERMOTATIONS))
+        print("him:" + str(course_total_time / self.PERMOTATIONS))
+        print('precentage:' + str(int(my_total_time / course_total_time * 100)) +
               '%')
 
     def unit_test(self, data):
         real_result, time = self.run_subprocess(data,
-                                                self.MY_PATH + self.FILE_NAME,
+                                                self.MY_PATH,
                                                 self.TIME_LIMIT)
         return real_result.strip()
 
     def test_aginst_function(self):
-        if not os.path.isfile(self.MY_PATH + self.FILE_NAME):
-            raise Exception("file dont exzist:" + self.MY_PATH + self.FILE_NAME)
+        if not os.path.isfile(self.MY_PATH):
+            raise Exception("file dont exzist:" + self.MY_PATH)
         self.compile_file(self.MY_PATH)
-        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH +
-                                                           self.FILE_NAME)
+        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH)
         total_time_my = 0
         for x in tqdm(range(self.PERMOTATIONS)):
             data = self.data_creator()
             a, time_test, time_my = self.run_only_me(data)
             total_time_my += time_my
             if not a:
-                print('BAG')
-                break
+                raise ArithmeticError("result dont match the data")
         print("ME:" + str(total_time_my))
