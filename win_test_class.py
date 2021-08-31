@@ -20,6 +20,7 @@ class Test(object):
     MAX_VIRTUAL_MEMORY = 512 * 1024 * 1024
     TIME_LIMIT = 5.0
     PERMOTATIONS = 100
+    ONLINE=True
 
     def limit_virtual_memory(self):
         pass
@@ -45,20 +46,6 @@ class Test(object):
                 print('data:' + data)
             raise ArithmeticError("dont match")
         return [float(x) for x in times]
-
-    def run_only_me(self, data):
-        my_result, my_time = self.run_subprocess(data, self.MY_PATH,
-                                                 self.TIME_LIMIT)
-        if self.IS_PRINT_OUTPUTS:
-            print('my result:' + my_result)
-            print('data:' + data)
-        if self.validate_result(my_result, data):
-            return True, float(-1.0), float(my_time)
-        else:
-            return False, float(-1.0), float(my_time)
-
-    def validate_result(self, result, data):
-        return NotImplemented
 
     def run_subprocess(self, data, path, time_limit):
         start = timer()
@@ -99,7 +86,11 @@ class Test(object):
 
         my_total_time = 0
         course_total_time = 0
-        for x in tqdm.gui.tqdm(range(self.PERMOTATIONS)):
+        if self.ONLINE:
+            func = tqdm.gui.tqdm
+        else:
+            func = tqdm.tqdm
+        for _ in func(range(self.PERMOTATIONS)):
             data = self.data_creator()
             my_time, course_time = self.run_test(data, [self.MY_PATH, self.COURSE_PATH])
             my_total_time += my_time
@@ -115,14 +106,3 @@ class Test(object):
                                                 self.TIME_LIMIT)
         return real_result.strip()
 
-    def test_aginst_function(self):
-        if not os.path.isfile(self.ROOT_DIR + self.MY_PATH):
-            raise Exception("file dont exzist:" + self.ROOT_DIR + self.MY_PATH)
-        total_time_my = 0
-        for x in tqdm(range(self.PERMOTATIONS)):
-            data = self.data_creator()
-            a, time_test, time_my = self.run_only_me(data)
-            total_time_my += time_my
-            if not a:
-                raise ArithmeticError("result dont match the data")
-        print("ME:" + str(total_time_my))
