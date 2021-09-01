@@ -22,7 +22,8 @@ class Test_spec(Test):
     COURSE_PATH = '\\solutions\\3-algorithms-on-graphs\\2-decomposition-2\\toposort.py'
     MY_PATH = "\\my_solutions\\3-algorithms-on-graphs\\2-decomposition-2\\order_dag.py"
     #IS_PRINT_OUTPUTS = True
-    #SEE_STDERR = True
+    #
+    SEE_STDERR = True
     PERMOTATIONS = 100
     TIME_LIMIT = 10
     G = None
