@@ -1,13 +1,13 @@
 #Uses python3
 import random
-
-from win_test_class import Test
+import pytest
+from test_class import Test
 import networkx as nx
 from networkx.generators.random_graphs import erdos_renyi_graph
 
 class Test_spec(Test):
-    COURSE_PATH = '\\solutions\\3-algorithms-on-graphs\\2-decomposition-2\\acyclicity.py'
-    MY_PATH = "\\my_solutions\\3-algorithms-on-graphs\\2-decomposition-2\\acyclicity.py"
+    COURSE_PATH = '/solutions/3-algorithms-on-graphs/2-decomposition-2/acyclicity.py'
+    MY_PATH = "/my_solutions/3-algorithms-on-graphs/2-decomposition-2/acyclicity.py"
     #IS_PRINT_OUTPUTS = True
     #SEE_STDERR = True
     PERMOTATIONS = 100

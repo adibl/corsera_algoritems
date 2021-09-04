@@ -1,25 +1,21 @@
 import os
-import importlib
-import compileall
+import resource
 import subprocess
-import re
-#import resource
-import datetime
-from threading import Timer
 
 from timeit import default_timer as timer
-from tqdm import tqdm
+import tqdm
 
 
 class Test(object):
+    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     MY_PATH = NotImplemented
     COURSE_PATH = NotImplemented
-    FILE_NAME = NotImplemented
     IS_PRINT_OUTPUTS = False
     SEE_STDERR = False
     MAX_VIRTUAL_MEMORY = 512 * 1024 * 1024
     TIME_LIMIT = 5.0
     PERMOTATIONS = 100
+    IDE=False
 
     def limit_virtual_memory(self):
         pass
@@ -28,49 +24,32 @@ class Test(object):
         # the hard limit would prevent that).
         # When the limit cannot be changed, setrlimit() raises ValueError.
         # TODO: add memory limit for win
-        #resource.setrlimit(resource.RLIMIT_AS,
-        #(self.MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
+        resource.setrlimit(resource.RLIMIT_AS,
+        (self.MAX_VIRTUAL_MEMORY, resource.RLIM_INFINITY))
 
-    def run_test(self, data):
-        course_result, course_time = self.run_subprocess(
-            data, self.path_to_course, self.TIME_LIMIT * 5)
-        my_result, my_time = self.run_subprocess(data, self.path_to_me,
-                                                 self.TIME_LIMIT)
-        if not self.compare_output(my_result, course_result):
+    def run_test(self, data, paths):
+        times = []
+        results = []
+        for path in paths:
+            result, time = self.run_subprocess(data, path, self.TIME_LIMIT * 5)
+            results.append(result)
+            times.append(time)
+        if not self.compare_output(results[0], results[1]):
             if self.IS_PRINT_OUTPUTS:
-                print('my result:' + my_result)
-                print('course result:' + course_result)
+                print('my result:' + results[0])
+                print('course result:' + results[1])
                 print('data:' + data)
-            return False, float(course_time), float(my_time)
-        elif self.IS_PRINT_OUTPUTS:
-            print('my result:' + my_result)
-            print('course result:' + course_result)
-            print('data:' + data)
-            return True, float(course_time), float(my_time)
-        return True, float(course_time), float(my_time)
-
-    def run_only_me(self, data):
-        my_result, my_time = self.run_subprocess(data, self.path_to_me,
-                                                 self.TIME_LIMIT)
-        if self.IS_PRINT_OUTPUTS:
-            print('my result:' + my_result)
-            print('data:' + data)
-        if self.validate_result(my_result, data):
-            return True, float(-1.0), float(my_time)
-        else:
-            return False, float(-1.0), float(my_time)
-
-    def validate_result(self, result, data):
-        return NotImplemented
+            raise ArithmeticError("dont match")
+        return [float(x) for x in times]
 
     def run_subprocess(self, data, path, time_limit):
         start = timer()
-        proc = subprocess.Popen(["python", path],
+        proc = subprocess.Popen(["python3", self.ROOT_DIR + path],
                                 stdout=subprocess.PIPE,
                                 stdin=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
-                                #preexec_fn=self.limit_virtual_memory,
-                                cwd=os.path.dirname(path))
+                                preexec_fn=self.limit_virtual_memory,
+                                cwd=os.path.dirname(self.ROOT_DIR + path))
         try:
             stdout, stderr = proc.communicate(bytes(data + '\n', 'ascii'),
                                               timeout=time_limit)
@@ -80,15 +59,12 @@ class Test(object):
             time = end - start
             if float(time) > time_limit:
                 print('timeout:' + str(time_limit))
-                return '', 0
-            elif self.SEE_STDERR:
-                print(stderr)
-                return result, time
-            else:
-                return result, time
+                raise TimeoutError("excede time limit- took{} insted of {}".format(time, time_limit))
+            if self.SEE_STDERR:
+                print("STDERR:" + str(stderr))
+            return result, time
         except subprocess.TimeoutExpired:
-            print('data:' + str(data))
-            print('more than {0} seconds'.format(time_limit * 3))
+            raise TimeoutError('more than {0} seconds'.format(time_limit))
 
     def data_creator(self):
         raise NotImplementedError
@@ -96,56 +72,30 @@ class Test(object):
     def compare_output(self, my_result, course_result):
         return my_result.strip() == course_result.strip()
 
-    def compile_file(self, name):
-        compileall.compile_dir(name)
-
     def test_main(self):
-        if not os.path.isfile(self.MY_PATH + self.FILE_NAME):
-            raise Exception("file dont exzist:" + self.MY_PATH + self.FILE_NAME)
-        if not os.path.isfile(self.COURSE_PATH + self.FILE_NAME):
-            raise Exception("file dont exzist:" + self.COURSE_PATH + self.FILE_NAME)
-        self.compile_file(self.MY_PATH)
-        self.compile_file(self.COURSE_PATH)
+        for path in [self.MY_PATH, self.COURSE_PATH]:
+            if not os.path.isfile(self.ROOT_DIR + path):
+                raise Exception("file dont exzist:" + self.ROOT_DIR + path)
 
-        self.path_to_course = importlib.util.cache_from_source(
-            self.COURSE_PATH + self.FILE_NAME)
-        self.path_to_course = self.path_to_course
-        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH +
-                                                           self.FILE_NAME)
-        total_time_test = 0
-        total_time_my = 0
-
-        for x in tqdm(range(self.PERMOTATIONS)):
+        my_total_time = 0
+        course_total_time = 0
+        if self.IDE:
+            func = tqdm.gui.tqdm
+        else:
+            func = tqdm.tqdm
+        for _ in func(range(self.PERMOTATIONS)):
             data = self.data_creator()
-            a, time_test, time_my = self.run_test(data)
-            total_time_test += time_test
-            total_time_my += time_my
-            if not a:
-                print('BAG')
-                break
-        print("ME:" + str(total_time_my / self.PERMOTATIONS))
-        print("him:" + str(total_time_test / self.PERMOTATIONS))
-        print('precentage:' + str(int(total_time_my / total_time_test * 100)) +
+            my_time, course_time = self.run_test(data, [self.MY_PATH, self.COURSE_PATH])
+            my_total_time += my_time
+            course_total_time += course_time
+        print("ME:" + str(my_total_time / self.PERMOTATIONS))
+        print("him:" + str(course_total_time / self.PERMOTATIONS))
+        print('precentage:' + str(int(my_total_time / course_total_time * 100)) +
               '%')
 
     def unit_test(self, data):
         real_result, time = self.run_subprocess(data,
-                                                self.MY_PATH + self.FILE_NAME,
+                                                self.MY_PATH,
                                                 self.TIME_LIMIT)
         return real_result.strip()
 
-    def test_aginst_function(self):
-        if not os.path.isfile(self.MY_PATH + self.FILE_NAME):
-            raise Exception("file dont exzist:" + self.MY_PATH + self.FILE_NAME)
-        self.compile_file(self.MY_PATH)
-        self.path_to_me = importlib.util.cache_from_source(self.MY_PATH +
-                                                           self.FILE_NAME)
-        total_time_my = 0
-        for x in tqdm(range(self.PERMOTATIONS)):
-            data = self.data_creator()
-            a, time_test, time_my = self.run_only_me(data)
-            total_time_my += time_my
-            if not a:
-                print('BAG')
-                break
-        print("ME:" + str(total_time_my))

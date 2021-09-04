@@ -1,12 +1,12 @@
 #Uses python3
 import random
 
-from win_test_class import Test
+from test_class import Test
 
 
 class Test_spec(Test):
-    COURSE_PATH = '\\solutions\\3-algorithms-on-graphs\\1-decomposition-1\\reachability.py'
-    MY_PATH = "\\my_solutions\\3-algorithms-on-graphs\\1-decomposition-1\\reachability.py"
+    COURSE_PATH = '/solutions/3-algorithms-on-graphs/1-decomposition-1/reachability.py'
+    MY_PATH = "/my_solutions/3-algorithms-on-graphs/1-decomposition-1/reachability.py"
     #IS_PRINT_OUTPUTS = True
     #SEE_STDERR = True
     PERMOTATIONS = 1000

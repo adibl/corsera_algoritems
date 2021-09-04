@@ -1,20 +1,20 @@
 # Uses python3
 import random
 
-from win_test_class import Test
+from test_class import Test
 
 import sys
 sys.setrecursionlimit(10**4)
 
 
 class Test_spec(Test):
-    COURSE_PATH = '\\solutions\\3-algorithms-on-graphs\\2-decomposition-2\\strongly_connected.py'
-    MY_PATH = "\\my_solutions\\3-algorithms-on-graphs\\2-decomposition-2\\strongly_connected.py"
+    COURSE_PATH = '/solutions/3-algorithms-on-graphs/2-decomposition-2/strongly_connected.py'
+    MY_PATH = "/my_solutions/3-algorithms-on-graphs/2-decomposition-2/strongly_connected.py"
     #IS_PRINT_OUTPUTS = True
     #SEE_STDERR = True
     PERMOTATIONS = 100
     TIME_LIMIT = 5
-    ONLINE = True
+    IDE = False
 
     @classmethod
     def node_number(cls):
